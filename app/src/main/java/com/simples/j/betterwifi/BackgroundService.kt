@@ -20,6 +20,7 @@ class BackgroundService : Service() {
     private var scanList = ArrayList<ScanResult>()
     private var filteredConfiguredList = ArrayList<WifiConfiguration>()
     private lateinit var receiver: BroadcastReceiver
+    private var looper = Looper()
 
     override fun onBind(intent: Intent): IBinder? {
         // TODO: Return the communication channel to the service.
@@ -59,13 +60,14 @@ class BackgroundService : Service() {
         iFilter.addAction(NETWORK_STATE_CHANGED_ACTION)
         registerReceiver(receiver, iFilter)
 
-        Looper().start()
+        looper.start()
 
     }
 
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(receiver)
+        looper.quit()
         i(applicationContext.packageName, "Sticky service stopped")
     }
 
@@ -96,6 +98,7 @@ class BackgroundService : Service() {
                 if (wifiInfo.rssi < item.level) {
                     i(applicationContext.packageName, "${item.SSID}(${item.level}) is stronger than ${wifiInfo.ssid}(${wifiInfo.rssi})")
                     val wifiConf: WifiConfiguration = filteredConfiguredList[i]
+                    i(applicationContext.packageName, "${wifiConf.SSID}")
 
                     wifiManager.disconnect()
                     wifiManager.enableNetwork(wifiConf.networkId, true)
@@ -118,14 +121,22 @@ class BackgroundService : Service() {
 
     private inner class Looper: Thread() {
 
+        var isRunning = true
+
         override fun run() {
             super.run()
 
-            while(wifiManager.connectionInfo.rssi < -60){
-                wifiManager.startScan()
+            while(isRunning){
+                if(wifiManager.connectionInfo.rssi < -60)
+                    wifiManager.startScan()
+
+                sleep(1000)
             }
 
-            Thread.sleep(1000)
+        }
+
+        fun quit() {
+            isRunning = false
         }
     }
 }
