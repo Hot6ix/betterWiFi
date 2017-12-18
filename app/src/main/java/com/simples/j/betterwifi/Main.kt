@@ -13,7 +13,7 @@ import kotlinx.android.synthetic.main.main.*
 class Main : AppCompatActivity() {
 
     private val request = 0
-    public var isServiceRunning = false
+    private var isServiceRunning = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,15 +30,16 @@ class Main : AppCompatActivity() {
             if(isServiceRunning) {
                 stopService(Intent(this, BackgroundService::class.java))
                 isServiceRunning = false
+                button1.text = applicationContext.getText(R.string.enable_service)
             }
             else {
                 startService(Intent(this, BackgroundService::class.java))
                 isServiceRunning = true
+                button1.text = applicationContext.getText(R.string.disable_service)
             }
 
-            button1.text = isServiceRunning.toString()
         }
-        button1.text = isServiceRunning.toString()
+        button1.text = applicationContext.getText(R.string.enable_service)
 
     }
 

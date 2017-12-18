@@ -20,7 +20,6 @@ class BackgroundService : Service() {
     private var scanList = ArrayList<ScanResult>()
     private var filteredConfiguredList = ArrayList<WifiConfiguration>()
     private lateinit var receiver: BroadcastReceiver
-    private var isEnabled: Boolean = true
 
     override fun onBind(intent: Intent): IBinder? {
         // TODO: Return the communication channel to the service.
@@ -47,7 +46,9 @@ class BackgroundService : Service() {
 
                         compare(sort(filter(scanList, wifiManager.configuredNetworks)))
 
-                        if(isEnabled) wifiManager.startScan()
+                        if(wifiManager.connectionInfo.rssi > -60) // If current wifi is poor
+                            wifiManager.startScan()
+
                     }
                     NETWORK_STATE_CHANGED_ACTION -> sendBroadcast(Intent("wifi.ON_NETWORK_STATE_CHANGED"))
                 }
@@ -58,7 +59,8 @@ class BackgroundService : Service() {
         iFilter.addAction(NETWORK_STATE_CHANGED_ACTION)
         registerReceiver(receiver, iFilter)
 
-        if(isEnabled) wifiManager.startScan()
+        Looper().start()
+
     }
 
     override fun onDestroy() {
@@ -111,6 +113,19 @@ class BackgroundService : Service() {
         }
         else {
             false
+        }
+    }
+
+    private inner class Looper: Thread() {
+
+        override fun run() {
+            super.run()
+
+            while(wifiManager.connectionInfo.rssi < -60){
+                wifiManager.startScan()
+            }
+
+            Thread.sleep(1000)
         }
     }
 }

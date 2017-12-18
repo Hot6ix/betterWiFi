@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">betterWiFi</string>
+    <string name="enable_service">Enable Service</string>
+    <string name="disable_service">Disable Service</string>
 </resources>
