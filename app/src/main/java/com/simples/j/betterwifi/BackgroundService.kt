@@ -22,6 +22,9 @@ class BackgroundService : Service() {
     private var filteredConfiguredList = ArrayList<WifiConfiguration>()
     private lateinit var receiver: BroadcastReceiver
     private var looper = Looper()
+    private var isScanning = false
+    private var repeating: Long = 3000
+    private var signalDiff: Int = 10
 
     override fun onBind(intent: Intent): IBinder? {
         // TODO: Return the communication channel to the service.
@@ -48,8 +51,7 @@ class BackgroundService : Service() {
 
                         compare(sort(filter(scanList, wifiManager.configuredNetworks)))
 
-                        if(wifiManager.connectionInfo.rssi > -60) // If current wifi is poor
-                            wifiManager.startScan()
+                        isScanning = false
 
                     }
                     NETWORK_STATE_CHANGED_ACTION -> sendBroadcast(Intent("wifi.ON_NETWORK_STATE_CHANGED"))
@@ -62,7 +64,6 @@ class BackgroundService : Service() {
         registerReceiver(receiver, iFilter)
 
         looper.start()
-
     }
 
     override fun onDestroy() {
@@ -96,15 +97,18 @@ class BackgroundService : Service() {
 
         for((i, item) in filtered.withIndex()) {
             if(ssid != item.SSID) {
-                if (wifiInfo.rssi < item.level) {
-                    val wifiConf: WifiConfiguration = filteredConfiguredList[i]
-                    Toast.makeText(applicationContext, "Attempt to connect to ${wifiConf.SSID}", Toast.LENGTH_SHORT).show()
+                if ((wifiInfo.rssi < item.level) && ((item.level - wifiInfo.rssi) > signalDiff)) {
+                    val wifiConf: WifiConfiguration? = filteredConfiguredList.find { Regex("\"").replace(it.SSID, "")   == item.SSID }
 
-                    wifiManager.disconnect()
-                    wifiManager.enableNetwork(wifiConf.networkId, true)
-                    wifiManager.reconnect()
+                    if(wifiConf != null) {
+                        Toast.makeText(applicationContext, "Connecting to ${wifiConf.SSID}", Toast.LENGTH_SHORT).show()
 
-                    if(check()) break
+                        wifiManager.disconnect()
+                        wifiManager.enableNetwork(wifiConf.networkId, true)
+                        wifiManager.reconnect()
+
+                        if(check()) break
+                    }
                 }
             }
         }
@@ -127,10 +131,14 @@ class BackgroundService : Service() {
             super.run()
 
             while(isRunning){
-                if(wifiManager.connectionInfo.rssi < -60)
-                    wifiManager.startScan()
+                if(wifiManager.connectionInfo.rssi < -60) {
+                    if(!isScanning) {
+                        wifiManager.startScan()
+                    }
+                    else i(applicationContext.packageName, "Service is still scanning...")
+                }
 
-                sleep(1000)
+                sleep(repeating)
             }
 
         }
