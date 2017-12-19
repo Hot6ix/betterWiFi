@@ -13,6 +13,7 @@ import android.net.wifi.WifiManager.NETWORK_STATE_CHANGED_ACTION
 import android.net.wifi.WifiManager.SCAN_RESULTS_AVAILABLE_ACTION
 import android.os.IBinder
 import android.util.Log.i
+import android.widget.Toast
 
 class BackgroundService : Service() {
 
@@ -96,9 +97,8 @@ class BackgroundService : Service() {
         for((i, item) in filtered.withIndex()) {
             if(ssid != item.SSID) {
                 if (wifiInfo.rssi < item.level) {
-                    i(applicationContext.packageName, "${item.SSID}(${item.level}) is stronger than ${wifiInfo.ssid}(${wifiInfo.rssi})")
                     val wifiConf: WifiConfiguration = filteredConfiguredList[i]
-                    i(applicationContext.packageName, "${wifiConf.SSID}")
+                    Toast.makeText(applicationContext, "Attempt to connect to ${wifiConf.SSID}", Toast.LENGTH_SHORT).show()
 
                     wifiManager.disconnect()
                     wifiManager.enableNetwork(wifiConf.networkId, true)
