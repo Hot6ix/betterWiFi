@@ -22,9 +22,6 @@ class Main : AppCompatActivity() {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), request)
         }
-        else {
-            i(applicationContext.packageName, "Permission was granted")
-        }
 
         button1.setOnClickListener {
             if(isServiceRunning) {
@@ -33,6 +30,7 @@ class Main : AppCompatActivity() {
                 button1.text = applicationContext.getText(R.string.enable_service)
             }
             else {
+                stopService(Intent(this, BackgroundService::class.java))
                 startService(Intent(this, BackgroundService::class.java))
                 isServiceRunning = true
                 button1.text = applicationContext.getText(R.string.disable_service)
